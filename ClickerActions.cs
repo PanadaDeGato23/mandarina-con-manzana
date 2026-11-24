@@ -15,8 +15,17 @@ public class ClickerActions : MonoBehaviour
 
     public TextMeshProUGUI luckyText;
     public TextMeshProUGUI clickPowerText;
-    public TextMeshProUGUI statsText;       // texto de "por click / por segundo"
-    public Transform clickButtonTransform;  // el botón principal, para la animación
+    public TextMeshProUGUI statsText;
+    public Transform clickButtonTransform;
+
+    // Sprite del botón principal
+    public Image clickButtonImage;                    // el Image del Button principal
+    public Sprite[] sprites;                          // el primero es el inicial
+    public int[] spriteGoals = { 0, 50, 150, 400 };   // clicks totales para cada sprite
+
+    // Códigos
+    public TMP_InputField codeInput;
+    public TextMeshProUGUI messageText;
 
     public int upgradeCost = 50;
     public int upgradeCost2 = 150;
@@ -29,16 +38,18 @@ public class ClickerActions : MonoBehaviour
     private bool upgradeBought = false;
     private bool upgrade2Bought = false;
     private bool autoBought = false;
+    private bool mandarinaUsed = false;
 
     private int baseClick = 1;
+    private int totalEarned = 0;
     private Coroutine punchRoutine;
 
     void Start()
     {
         luckyText.gameObject.SetActive(false);
+        messageText.text = "";
     }
 
-    // Actualiza botones bloqueados y el texto de stats
     public void Refresh()
     {
         int counter = manager.counter;
@@ -54,6 +65,27 @@ public class ClickerActions : MonoBehaviour
         int perClick = baseClick * manager.clickValue;
         int perSecond = autoBought ? perClick : 0;
         statsText.text = "Por click: " + perClick + "\nPor segundo: " + perSecond;
+
+        UpdateSprite();
+    }
+
+    // Todo lo que suma clicks pasa por aquí
+    void AddClicks(int amount)
+    {
+        manager.counter += amount;
+        totalEarned += amount;
+        manager.UpdateText();
+    }
+
+    void UpdateSprite()
+    {
+        for (int i = 0; i < sprites.Length && i < spriteGoals.Length; i++)
+        {
+            if (totalEarned >= spriteGoals[i] && sprites[i] != null)
+            {
+                clickButtonImage.sprite = sprites[i];
+            }
+        }
     }
 
     public void CountClick()
@@ -66,17 +98,13 @@ public class ClickerActions : MonoBehaviour
             ShowLuckyText("¡x2!");
         }
 
-        manager.counter += value;
-        manager.UpdateText();
+        AddClicks(value);
+        manager.audioSource.Play();
 
-        manager.audioSource.Play();   // sonido para click manual y auto click
-
-        // animación del botón
         if (punchRoutine != null) StopCoroutine(punchRoutine);
         punchRoutine = StartCoroutine(PunchScale());
     }
 
-    // El botón crece un poco y vuelve a su tamaño en 0.15 segundos
     IEnumerator PunchScale()
     {
         float t = 0f;
@@ -88,6 +116,42 @@ public class ClickerActions : MonoBehaviour
             yield return null;
         }
         clickButtonTransform.localScale = Vector3.one;
+    }
+
+    public void RedeemCode()
+    {
+        string code = codeInput.text.Trim().ToLower();
+        codeInput.text = "";
+
+        if (code == "mandarina")
+        {
+            if (mandarinaUsed)
+            {
+                ShowMessage("Ya canjeaste este código");
+            }
+            else
+            {
+                mandarinaUsed = true;
+                AddClicks(1000);
+                ShowMessage("¡Código canjeado! +1000 clicks");
+            }
+        }
+        else
+        {
+            ShowMessage("Código inválido");
+        }
+    }
+
+    void ShowMessage(string message)
+    {
+        messageText.text = message;
+        CancelInvoke(nameof(ClearMessage));
+        Invoke(nameof(ClearMessage), 2f);
+    }
+
+    void ClearMessage()
+    {
+        messageText.text = "";
     }
 
     void ShowLuckyText(string message)

@@ -18,7 +18,7 @@ public class ClickerManager : MonoBehaviour
     public void UpdateText()
     {
         counterText.text = counter.ToString();
-        actions.Refresh();   // actualiza botones bloqueados y textos
+        actions.Refresh();   // botones bloqueados, stats y sprite
     }
 
     public void CountClick() { actions.CountClick(); }
@@ -27,4 +27,5 @@ public class ClickerManager : MonoBehaviour
     public void BuyAutoClick() { actions.BuyAutoClick(); }
     public void BuyLucky() { actions.BuyLucky(); }
     public void BuyClickPower() { actions.BuyClickPower(); }
+    public void RedeemCode() { actions.RedeemCode(); }
 }
